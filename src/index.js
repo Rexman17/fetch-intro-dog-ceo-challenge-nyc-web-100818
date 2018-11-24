@@ -1,72 +1,73 @@
-console.log('%c HI', 'color: firebrick')
-
-// in order to do something after the page has loaded...
-// takes in a function as an argument
+// going to need an event listener on the document since js loaded in the HEAD
+// takes in a call back function
 document.addEventListener('DOMContentLoaded', function() {
-  let allBreeds = [] // first set to empty array
-  // set URL given to us in the ReadMe
-  const imgUrl = "https://dog.ceo/api/breeds/image/random/4"
+  // DOM ELEMENTS
+  const breedDropDown = document.getElementById('breed-dropdown')
+  // console.log(breedDropDown);
+  const imgContainer = document.getElementById('dog-image-container')
+  // console.log(imgContainer); // just to check we got the right element
+  const breedList = document.getElementById('dog-breeds')
+  // console.log(breedList);
+  // VARIABLES
   const breedUrl = 'https://dog.ceo/api/breeds/list/all'
-  // where we will add our dog images
-  const dogImgCont = document.getElementById('dog-image-container')
-  // where we will add our breed names
-  const dogBreedList = document.getElementById('dog-breeds')
-  // could attach 50 dupe eventlistener OR leverage event DELEGATION so find the parent
-  // instead, listen for click on the PARENT container (ONE event listener) and then delegate what should happen
-  const letterDropDown = document.getElementById('breed-dropdown') // the select
-
-
-  dogBreedList.addEventListener('click', (event) => {
-    // console.log(event.target); // target is the DOM node that RECEIVED the event
-    event.target.style.color = "cyan"
-  })
-
-  letterDropDown.addEventListener('change', (event) => {
-    const selectedLetter = event.target.value
-    // console.log(allBreeds);
-    // filter out name that do not match the selected letter
-    let filteredBreeds = allBreeds.filter((breed) => {
-      return breed.startsWith(selectedLetter)
+  // return an object called message with keys repping the breeds
+  const imgUrl = "https://dog.ceo/api/breeds/image/random/4" // where we are fetching images from
+  // returns an array of 4 dog img urls with a key of message
+  // console.log(imgUrl);
+  // on page load - accomplished by being inside this eventlistener which listens for DOMContentLoaded
+  // fetch the images using the url above ⬆️
+  fetch(imgUrl, { method: 'GET' })
+    .then((response) => {
+      // console.log(response); // must parse this response
+        return response.json()// parse the response as JSON
     })
-    // console.log(filteredBreeds);
-    // WHY DOESN'T FOR EACH WORK - IS IT BC IT MUTATES ORIGINAL ARRAY?
-    // filteredBreeds.forEach(function(breed) {
-    //   dogBreedList.innerHTML += `${breed}`
-    // })
-    dogBreedList.innerHTML = createDogLis(filteredBreeds)
-  })
-  // console.log(dogImgCont);
-  // send a fetch request to the URL
-  // fetch takes 2 args - the url and the method of the request
-  fetch(imgUrl, { method: "GET" })
-    .then((responseData) => {
-      // console.log(responseData); // log responseData to check that all is good
-      if (responseData.ok) { // checking status code and making sure it's less than 400
-        return responseData.json() // returns another promise and the only way to get this value is w another .then()
-      }
-    })
-    .then((dogImgData) => {
-      // console.log(dogImgData);
-      // add imgs to the dom forEach element in the array and since that element won't change, just add it to the top of when page loads ^
-      // dogImgData is an object with a KEY of message that holds the images in an array
-      // so we want to forEach over each element in the array
-      dogImgData.message.forEach(function(imgUrl) {
-        dogImgCont.innerHTML += `<img src=${imgUrl}>`
+    .then((parsedJSON) => {
+      // console.log(parsedJSON); // logs an object w an array of 4 dog img urls with a key of message which gives us an ARRAY to iterate over
+      let imgUrlsArray = parsedJSON.message
+      // console.log(imgUrlsArray);
+      // add image elements to the DOM for each🤔 image in the array
+      imgUrlsArray.map((url) => {
+        // take the parsedJSON and append it to the dog image container <-- identify this container above ^
+        imgContainer.innerHTML += `<img src=${url}>`
       })
     })
 
+    // on page load - accomplished by being inside this eventlistener which listens for DOMContentLoaded
+    // fetch all the dog breeds using the url above ⬆️
     fetch(breedUrl, { method: 'GET' })
-      .then((response) => response.json()) // implicit return
-      .then((breedData) => {
-        allBreeds = Object.keys(breedData.message)
-        // console.log(allBreeds);
-        // dogBreedList.innerHTML = allBreeds.map(breed) =>
-        allBreeds.forEach(function(breedname) {
-          dogBreedList.innerHTML += createDogLis(allBreeds)
+      .then((r) => {
+        // console.log(r); // r is json we must parse
+        return r.json()
+      })
+      .then((parsedJSON) => {
+        // console.log(parsedJSON) // prints an object called message with keys repping the breeds
+        // must iterate over the keys of the message object to add the breeds to the page in an <ul> (take a look at the included index.html)
+        breeds = Object.keys(parsedJSON.message)
+        // console.log(breeds);
+        breeds.map((breed) => {
+          // find the element to which we are adding this ul which we defined above ^
+          return breedList.innerHTML += `<li> ${breed} </li>`
         })
-    })
-})
+      })
+      // add javascript so that the font color of a particular <li> changes on click. This can be a color of your choosing = add a click event to the breedList DOM element
+      breedList.addEventListener('click', function(e) {
+        // console.log(e.target); grabbed the li
+        // When the user clicks any of the dog breed list items, the color the text should change.
+        e.target.style.color = 'pink';
+      })
 
-function createDogLis(dogBreedArray) {
-  return dogBreedArray.map((breed) => `<li>${breed}</li>`).join(" ")
-}
+      //Once we are able to load all of the dog breeds onto the page, add javascript so that the user can filter breeds that start with a particular letter using a dropdown.
+      //locate the drop down for the change event -- identified it above ^
+      breedDropDown.addEventListener('change', function(e) {
+        // must capture value that user selects from dropdown...
+        let letter = breedDropDown.value
+        // console.log(letter);
+        // console.log(e);
+        let filtered = breeds.filter((breed) => {return breed.startsWith(letter)})
+        // console.log(filtered);
+          // console.log(filteredBreed);
+          // must change the DOM to reflect filtered breeds...
+          let listedFiltered = filtered.map((breed) => `<li>${breed}</li>`)
+          breedList.innerHTML = listedFiltered.join('')
+      })
+}) // end of DOMContentLoaded
